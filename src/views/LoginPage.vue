@@ -4,13 +4,27 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTitle } from '@vueuse/core'
 import AppButton from '@/components/AppButton.vue'
 import FormField from '@/components/FormField.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useAsync } from '@/composables/useAsync'
 
 useTitle('Sign in · Projects')
 
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
+const { loading, error, fieldErrors, run } = useAsync()
 
 const form = reactive({ email: '', password: '' })
+
+async function onSubmit() {
+  try {
+    await run(() => auth.login(form))
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/projects'
+    router.replace(redirect)
+  } catch {
+    // error captured
+  }
+}
 </script>
 
 <template>
@@ -32,6 +46,7 @@ const form = reactive({ email: '', password: '' })
           autocomplete="email"
           required
           placeholder="you@company.com"
+          :error="fieldErrors.email"
         />
         <FormField
           v-model="form.password"
@@ -39,6 +54,7 @@ const form = reactive({ email: '', password: '' })
           type="password"
           autocomplete="current-password"
           required
+          :error="fieldErrors.password"
         />
 
         <p
